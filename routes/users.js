@@ -1,7 +1,9 @@
 const errors = require("restify-errors");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const auth = require("../auth");
+const config = require("../config");
 
 module.exports = server => {
   server.post("/register", (req, res, next) => {
@@ -35,6 +37,15 @@ module.exports = server => {
 
     try {
       const user = await auth.authenticate(email, password);
+
+      //Create JWT
+      const token = jwt.sign(user.toJSON(), config.JWT_SECRET, {
+        expiresIn: "15m"
+      });
+      //Respond with token
+      const { iat, exp } = jwt.decode(token);
+
+      res.send({ iat, exp, token });
 
       next();
     } catch (err) {
